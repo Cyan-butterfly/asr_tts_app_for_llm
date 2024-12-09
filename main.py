@@ -77,97 +77,189 @@ def main():
     # 获取当前工作目录作为项目根目录
     base_directory = Path.cwd()
     
-    # 创建项目目录结构和文件
+    # # 创建项目目录结构和文件
+    # structure = {
+    #     '数据': {
+    #         '原始数据': {},
+    #         '清洗数据': {},
+    #         '数据说明文档': {
+    #             '数据说明文档模板.md': ''
+    #         },
+    #         '数据可视化': {
+    #             '示例图表.png': ''  # 可以手动添加图片
+    #         }
+    #     },
+    #     '特征工程': {
+    #         '特征选择': {},
+    #         '特征构建': {},
+    #         '特征描述文档': {
+    #             '特征描述文档模板.md': ''
+    #         }
+    #     },
+    #     '模型': {
+    #         '训练脚本': {
+    #             'train_model.py': ''
+    #         },
+    #         '调参结果': {},
+    #         '模型保存': {},
+    #         '模型评估': {
+    #             'evaluate_model.py': ''
+    #         }
+    #     },
+    #     '评估报告': {
+    #         '指标报告': {
+    #             '指标报告模板.md': ''
+    #         },
+    #         '可视化图表': {
+    #             '示例图表.png': ''  # 可以手动添加图片
+    #         },
+    #         '综合分析报告': {
+    #             '综合分析报告模板.md': ''
+    #         }
+    #     },
+    #     '代码': {
+    #         '主代码': {
+    #             'main.py': ''
+    #         },
+    #         '模块代码': {
+    #             '__init__.py': '',
+    #             'data_loader.py': ''
+    #         },
+    #         '工具脚本': {
+    #             '__init__.py': '',
+    #             'utils.py': ''
+    #         }
+    #     },
+    #     '文档': {
+    #         '项目计划': {
+    #             '项目计划模板.md': ''
+    #         },
+    #         '会议记录': {
+    #             '会议记录模板.md': ''
+    #         },
+    #         '用户手册': {
+    #             '用户手册模板.md': ''
+    #         }
+    #     },
+    #     '分享材料': {
+    #         'PPT': {
+    #             '示例PPT.pptx': ''  # 可以手动添加PPT文件
+    #         },
+    #         '演示视频': {
+    #             '示例视频.mp4': ''  # 可以手动添加视频文件
+    #         }
+    #     },
+    #     '实验记录': {
+    #         '实验1': {
+    #             '实验1记录.md': ''
+    #         },
+    #         '实验2': {
+    #             '实验2记录.md': ''
+    #         },
+    #         '实验总结': {
+    #             '实验总结模板.md': ''
+    #         }
+    #     },
+    #     '环境': {
+    #         'requirements.txt': '',
+    #         '环境配置说明': {
+    #             '配置说明.md': ''
+    #         }
+    #     },
+    #     'README.md': ''
+    # }
     structure = {
-        '数据': {
-            '原始数据': {},
-            '清洗数据': {},
-            '数据说明文档': {
-                '数据说明文档模板.md': ''
+        'data': {
+            'raw data': {},
+            'cleaned data': {},
+            'data documentation': {
+                'data documentation template.md': ''
             },
-            '数据可视化': {
-                '示例图表.png': ''  # 可以手动添加图片
+            'data visualization': {
+                'example chart.png': ''  # You can manually add pictures
             }
         },
-        '特征工程': {
-            '特征选择': {},
-            '特征构建': {},
-            '特征描述文档': {
-                '特征描述文档模板.md': ''
+        'feature engineering': {
+            'feature selection': {},
+            'feature construction': {},
+            'feature description document': {
+                'feature description template.md': ''
             }
         },
-        '模型': {
-            '训练脚本': {
+        'model': {
+            'training script': {
                 'train_model.py': ''
             },
-            '调参结果': {},
-            '模型保存': {},
-            '模型评估': {
+            'tuning results': {},
+            'model saving': {},
+            'model evaluation': {
                 'evaluate_model.py': ''
             }
         },
-        '评估报告': {
-            '指标报告': {
-                '指标报告模板.md': ''
+        'evaluation report': {
+            'metrics report': {
+                'metrics report template.md': ''
             },
-            '可视化图表': {
-                '示例图表.png': ''  # 可以手动添加图片
+            'visualization charts': {
+                'example chart.png': ''  # You can manually add pictures
             },
-            '综合分析报告': {
-                '综合分析报告模板.md': ''
+            'comprehensive analysis report': {
+                'comprehensive analysis report template.md': ''
             }
         },
-        '代码': {
-            '主代码': {
+        'code': {
+            'main code': {
                 'main.py': ''
             },
-            '模块代码': {
+            'module code': {
                 '__init__.py': '',
                 'data_loader.py': ''
             },
-            '工具脚本': {
+            'utility scripts': {
                 '__init__.py': '',
                 'utils.py': ''
             }
         },
-        '文档': {
-            '项目计划': {
-                '项目计划模板.md': ''
+        'documentation': {
+            'project plan': {
+                'project plan template.md': ''
             },
-            '会议记录': {
-                '会议记录模板.md': ''
+            'meeting notes': {
+                'meeting notes template.md': ''
             },
-            '用户手册': {
-                '用户手册模板.md': ''
+            'user manual': {
+                'user manual template.md': ''
             }
         },
-        '分享材料': {
+        'sharing materials': {
             'PPT': {
-                '示例PPT.pptx': ''  # 可以手动添加PPT文件
+                'example PPT.pptx': ''  # You can manually add PPT files
             },
-            '演示视频': {
-                '示例视频.mp4': ''  # 可以手动添加视频文件
+            'demo video': {
+                'example video.mp4': ''  # You can manually add video files
             }
         },
-        '实验记录': {
-            '实验1': {
-                '实验1记录.md': ''
+        'experiment records': {
+            'experiment 1': {
+                'experiment 1 record.md': ''
             },
-            '实验2': {
-                '实验2记录.md': ''
+            'experiment 2': {
+                'experiment 2 record.md': ''
             },
-            '实验总结': {
-                '实验总结模板.md': ''
+            'experiment summary': {
+                'experiment summary template.md': ''
             }
         },
-        '环境': {
+        'environment': {
             'requirements.txt': '',
-            '环境配置说明': {
-                '配置说明.md': ''
+            'environment configuration instructions': {
+                'configuration instructions.md': ''
             }
         },
         'README.md': ''
     }
+
+
     create_project_structure(base_directory, structure)
     
     # 初始化Git仓库并进行初始提交
