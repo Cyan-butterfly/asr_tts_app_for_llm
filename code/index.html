@@ -312,6 +312,7 @@
 
         const app = createApp({
             setup() {
+                let countdownTimer = null;
                 const transcriptText = ref('等待录音...')
                 const isProcessing = ref(false)
                 const isRecording = ref(false)
@@ -460,7 +461,7 @@
                         audioChunks.length = 0;
                         mediaRecorder.start(10);
                         
-                        let countdownTimer = setInterval(() => {
+                        countdownTimer = setInterval(() => {
                             remainingTime.value--;
                             if (remainingTime.value <= 0) {
                                 if (mediaRecorder && mediaRecorder.state === 'recording') {
@@ -583,43 +584,37 @@
                 };
 
                 const playText = async () => {
-                    if (!window.speechSynthesis) {
-                        console.error('浏览器不支持语音合成');
-                        return;
-                    }
-
-                    // 停止之前的语音
-                    window.speechSynthesis.cancel();
-
-                    // 添加标点符号进行断句
-                    let text = transcriptText.value;
-                    if (!text.endsWith('。') && !text.endsWith('！') && !text.endsWith('？')) {
-                        text += '。';
-                    }
-                    
-                    // 按中文标点符号分句
-                    const sentences = text.split(/([。！？])/g).filter(s => s.trim());
-                    
-                    // 为每个句子创建语音
-                    sentences.forEach((sentence, index) => {
-                        const utterance = new SpeechSynthesisUtterance(sentence);
-                        utterance.lang = 'zh-CN';
-                        utterance.rate = 1.0;  // 语速
-                        utterance.pitch = 1.0;  // 音高
-                        utterance.volume = 1.0;  // 音量
-                        
-                        // 最后一个句子结束后的回调
-                        if (index === sentences.length - 1) {
-                            utterance.onend = () => {
-                                console.log('语音播放完成');
-                            };
+                    try {
+                        const response = await fetch(`${SERVER_CONFIG.baseUrl}/synthesize`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                text: transcriptText.value
+                            })
+                        });
+                
+                        if (!response.ok) {
+                            throw new Error('语音合成失败');
                         }
+                
+                        const audioBlob = await response.blob();
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
                         
-                        // 添加延迟，确保句子间有停顿
-                        setTimeout(() => {
-                            window.speechSynthesis.speak(utterance);
-                        }, index * 300);  // 每句之间间隔300ms
-                    });
+                        audio.onended = () => {
+                            isPlaying.value = false;
+                            URL.revokeObjectURL(audioUrl);
+                        };
+                
+                        isPlaying.value = true;
+                        await audio.play();
+                
+                    } catch (error) {
+                        console.error('播放失败:', error);
+                        isPlaying.value = false;
+                    }
                 };
 
                 const pauseText = () => {

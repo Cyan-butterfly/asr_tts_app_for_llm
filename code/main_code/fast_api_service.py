@@ -9,12 +9,13 @@ import librosa
 import numpy as np
 from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from pydub import AudioSegment
 from fastapi.middleware.cors import CORSMiddleware
 import io
 import wave
+from paddlespeech.cli.tts.infer import TTSExecutor
 
 # 过滤警告
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -55,6 +56,9 @@ app.add_middleware(
 
 # 设置设备
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
+# 初始化语音合成执行器
+tts_executor = TTSExecutor()
 
 def save_upload_file(upload_file: UploadFile) -> str:
     try:
@@ -177,4 +181,48 @@ async def transcribe_audio(audio_file: UploadFile = File(
         
     except Exception as e:
         logger.error(f"Error during transcription: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/synthesize",
+    response_model=None,
+    summary="语音合成",
+    description="将文本转换为语音",
+    response_description="返回合成的音频文件",
+    tags=["语音服务"]
+)
+async def synthesize_text(text: TextRequest):
+    try:
+        # 生成临时文件路径
+        temp_dir = tempfile.gettempdir()
+        output_file = os.path.join(temp_dir, f"{uuid.uuid4()}.wav")
+
+        # 使用 PaddleSpeech 进行语音合成
+        tts_executor(
+            text=text.text,
+            output=output_file
+        )
+
+        logger.info(f"语音合成完成，输出文件：{output_file}")
+
+        # 读取生成的音频文件
+        with open(output_file, "rb") as audio_file:
+            audio_data = audio_file.read()
+
+        # 清理临时文件
+        try:
+            os.remove(output_file)
+        except Exception as e:
+            logger.warning(f"清理临时文件失败: {str(e)}")
+
+        # 返回音频数据
+        return Response(
+            content=audio_data,
+            media_type="audio/wav",
+            headers={
+                "Content-Disposition": f"attachment; filename=synthesized_audio.wav"
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"语音合成服务错误: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
