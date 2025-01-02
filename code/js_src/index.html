@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>语音输入和合成页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #transcript {
+            margin: 20px 0;
+            padding: 15px;
+            font-size: 18px;
+            color: #333;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            min-height: 60px;
+        }
+
+        #speechControls {
+            margin-top: 20px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+
+        .status-ok {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+
+        .status-error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+
+        #testAudioSection {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+        }
+
+        #audioStatus {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h1>🎤 语音输入</h1>
+        <button id="startBtn">开始录音</button>
+        <button id="stopBtn" disabled>停止录音</button>
+        <div id="transcript">等待录音...</div>
+    </div>
+
+    <div class="section">
+        <h1>🔊 语音合成</h1>
+        <!-- <div id="testAudioSection">
+            <button id="testAudioBtn">测试音频设备</button>
+            <div id="audioStatus"></div>
+        </div> -->
+        
+        <div id="speechControls" style="display: none;">
+            <button id="playBtn">播放朗读</button>
+            <button id="pauseBtn">暂停朗读</button>
+            <button id="cancelBtn">停止朗读</button>
+        </div>
+    </div>
+
+    <!-- <div class="section">
+        <h1>💡 使用说明</h1>
+        <ol style="text-align: left;">
+            <li>点击"测试音频设备"确认系统音频是否正常</li>
+            <li>点击"开始录音"按钮开始语音输入</li>
+            <li>说话完成后点击"停止录音"</li>
+            <li>识别结果会自动朗读，也可以使用播放控制按钮手动控制</li>
+        </ol>
+    </div> -->
+
+    <script src="app.js"></script>
+</body>
+</html>
