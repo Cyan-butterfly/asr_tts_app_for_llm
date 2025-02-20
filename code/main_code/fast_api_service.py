@@ -6,7 +6,8 @@ from typing import Optional
 import numpy as np
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydub import AudioSegment
 import paddle
 from paddlespeech.cli.asr.infer import ASRExecutor
@@ -50,6 +51,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 挂载静态文件目录
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # 初始化执行器
 asr_executor = None
@@ -230,7 +234,7 @@ async def transcribe_audio(
 async def synthesize_text(text: TextRequest):
     """
     将文本转换为语音
-    返回音频文件的路径
+    返回音频文件的字节流
     """
     try:
         logger.info(f"Synthesizing text: {text.text}")
@@ -245,7 +249,21 @@ async def synthesize_text(text: TextRequest):
 
         logger.info(f"语音合成完成，输出文件：{output_file}")
         
-        return JSONResponse(content={"audio_path": output_file})
+        # 读取音频文件并返回
+        def iterfile():
+            with open(output_file, 'rb') as f:
+                yield from f
+            # 读取完成后删除临时文件
+            try:
+                os.unlink(output_file)
+                logger.info(f"Cleaned up temp file: {output_file}")
+            except Exception as e:
+                logger.warning(f"Failed to clean up temp file {output_file}: {str(e)}")
+
+        return StreamingResponse(
+            iterfile(),
+            media_type="audio/wav"
+        )
         
     except Exception as e:
         logger.error(f"Error in text-to-speech: {str(e)}")
@@ -272,8 +290,5 @@ async def add_punctuation(text: TextRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
-def read_root():
-    return {
-        "status": "Server is running",
-        "services": ["语音识别 (/transcribe)", "语音合成 (/synthesize)", "添加标点符号 (/add_punctuation)"]
-    }
+async def read_root():
+    return FileResponse("static/index.html")
