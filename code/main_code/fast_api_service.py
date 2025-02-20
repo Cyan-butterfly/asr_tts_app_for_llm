@@ -101,6 +101,28 @@ def convert_audio_ffmpeg(input_path: str, output_path: str) -> bool:
     使用ffmpeg直接转换音频文件为16kHz采样率的WAV格式
     """
     try:
+        # 检查输入文件
+        if not os.path.exists(input_path):
+            logger.error(f"Input file does not exist: {input_path}")
+            return False
+            
+        # 检查ffmpeg是否可用
+        try:
+            version_cmd = ['ffmpeg', '-version']
+            version_process = subprocess.Popen(
+                version_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            version_stdout, version_stderr = version_process.communicate()
+            if version_process.returncode != 0:
+                logger.error("FFmpeg is not available")
+                return False
+            logger.info("FFmpeg is available")
+        except Exception as e:
+            logger.error(f"Error checking ffmpeg: {str(e)}")
+            return False
+
         cmd = [
             'ffmpeg',
             '-i', input_path,
@@ -110,6 +132,8 @@ def convert_audio_ffmpeg(input_path: str, output_path: str) -> bool:
             '-y',  # 覆盖已存在的文件
             output_path
         ]
+        
+        logger.info(f"Running FFmpeg command: {' '.join(cmd)}")
         
         # 执行命令
         process = subprocess.Popen(
@@ -124,9 +148,23 @@ def convert_audio_ffmpeg(input_path: str, output_path: str) -> bool:
             logger.error(f"FFmpeg error: {stderr.decode()}")
             return False
             
+        # 检查输出文件
+        if not os.path.exists(output_path):
+            logger.error(f"Output file was not created: {output_path}")
+            return False
+            
+        file_size = os.path.getsize(output_path)
+        if file_size == 0:
+            logger.error(f"Output file is empty: {output_path}")
+            return False
+            
+        logger.info(f"Successfully converted audio to: {output_path} (size: {file_size} bytes)")
         return True
+        
     except Exception as e:
         logger.error(f"Error running ffmpeg: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return False
 
 @app.post("/transcribe")
@@ -185,6 +223,17 @@ async def transcribe_audio(
             
         logger.info(f"Created WAV file: {wav_path}, size: {os.path.getsize(wav_path)} bytes")
         
+        # 检查音频文件的格式
+        try:
+            import wave
+            with wave.open(wav_path, 'rb') as wav_file:
+                params = wav_file.getparams()
+                logger.info(f"WAV file parameters: channels={params.nchannels}, "
+                          f"sampwidth={params.sampwidth}, framerate={params.framerate}, "
+                          f"nframes={params.nframes}")
+        except Exception as e:
+            logger.error(f"Error checking WAV file: {str(e)}")
+            
         # 设置文件权限
         os.chmod(wav_path, 0o644)
         
@@ -199,15 +248,20 @@ async def transcribe_audio(
             text_punc = get_text_executor()
             result = text_punc(text=result)
             logger.info(f"Text with punctuation: {result}")
+        else:
+            logger.warning("Speech recognition returned empty result")
         
         # 确保结果是字符串
         if not isinstance(result, str):
             result = str(result)
+            logger.info(f"Converted result to string: {result}")
         
         return JSONResponse(content={"text": result})
         
     except Exception as e:
         logger.error(f"Error processing audio: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
         
     finally:
@@ -292,3 +346,12 @@ async def add_punctuation(text: TextRequest):
 @app.get("/")
 async def read_root():
     return FileResponse("static/index.html")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "code.main_code.fast_api_service:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )

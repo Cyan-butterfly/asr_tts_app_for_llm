@@ -299,6 +299,15 @@
             <div class="section">
                 <h2><i class="mdi mdi-information"></i> 使用说明</h2>
                 <ol>
+                    <li>如果使用 Chrome 浏览器访问时无法使用麦克风，请：
+                        <ul>
+                            <li>在地址栏输入：<code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code></li>
+                            <li>找到 "Insecure origins treated as secure" 选项</li>
+                            <li>将此网站地址 <code>http://你的IP:8000</code> 添加到输入框中</li>
+                            <li>将选项改为 "Enabled"</li>
+                            <li>点击底部的 "Relaunch" 按钮重启浏览器</li>
+                        </ul>
+                    </li>
                     <li>点击"测试音频设备"确认系统音频是否正常</li>
                     <li>点击"开始录音"并允许浏览器使用麦克风</li>
                     <li>说话完成后点击"停止录音"</li>
@@ -340,9 +349,9 @@
                 let synthesisState = 'idle' 
 
                 const SERVER_CONFIG = {
-                    protocol: window.location.protocol,
+                    protocol: 'http:',
                     host: window.location.hostname || 'localhost',
-                    port: '8000',
+                    port: window.location.port || '8000',
                     get baseUrl() {
                         return `${this.protocol}//${this.host}:${this.port}`
                     }
@@ -387,27 +396,18 @@
                             }
                         })
 
-                        // 创建 AudioContext 用于重采样
-                        const audioContext = new AudioContext({
-                            sampleRate: 16000
-                        });
-                        
-                        const source = audioContext.createMediaStreamSource(stream);
-                        const destination = audioContext.createMediaStreamDestination();
-                        source.connect(destination);
-
-                        // 使用处理后的流创建 MediaRecorder
                         const options = {
                             audioBitsPerSecond: 128000,
-                            mimeType: 'audio/webm;codecs=opus'
+                            mimeType: 'audio/webm'  
                         };
                         
                         console.log('使用音频格式:', options.mimeType);
-                        mediaRecorder = new MediaRecorder(destination.stream, options);
+                        mediaRecorder = new MediaRecorder(stream, options);  
                         
                         mediaRecorder.ondataavailable = (event) => {
                             if (event.data.size > 0) {
                                 audioChunks.push(event.data);
+                                console.log('收到音频数据块，大小:', event.data.size, 'bytes');
                             }
                         };
                         
@@ -441,8 +441,10 @@
                             
                             try {
                                 transcriptText.value = '正在识别...';
+                                console.log('发送音频数据到服务器，大小:', audioBlob.size, 'bytes');
                                 const data = await transcribeAudio(formData);
-                                transcriptText.value = data.text;
+                                console.log('服务器返回结果:', data);
+                                transcriptText.value = data.text || '未能识别语音，请重试';
                                 
                                 if (data.text) {
                                     playText();
@@ -453,7 +455,6 @@
                             } finally {
                                 audioChunks.length = 0;
                                 stream.getTracks().forEach(track => track.stop());
-                                audioContext.close();
                             }
                         };
                         
