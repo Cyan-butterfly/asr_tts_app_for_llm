@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智能语音助手</title>
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJESURBVFhH7ZbNahRBFIXvqZ7EGQxowI0uXKgbQVwKWYgvcO0T6BOIL+DGvUsFQX0CwUUUJMsIgmQXhKyEBOKMk5np+6tunOrq6p7p9p8sAh4YpqvrnO+eW12VGa1atWrVqtV/pu7s0bvO7OSgM71+sRCWq+nZ0WvnYiC5P0wHhVpz9QrGZEThRPP1dGd4ZxjL2mR0w4qsNAa8IZ0Q7xJvxXvxSUyE3/N4LWzFWFdGRkZHRoOFqZiJmXgrPohP4rP4Jr6LH+KXmIuf4qf4Ln6I7+KLmIqZeC8m4rWYiOfiuTgW+8JrjXtGK+YbzWDlWByJQ7EnDsSu2BE7Yls8FI/FY/FIPBTbYks8EJvioXgg7os1cU+si01xT9wVd8RtcUvcFDfEdXFNXBVXxGVxSVwUF8R5cU6cFWfEaXFKnBQnxHFxTBwVR8QhsSH6hNca94zYzDeCwco+sSd2xY7YElvigXgkHomH4r7YFJvintgQ98SauCvWxR1xW9wUN8R1cU1cFVfEZXFJXBQXxHlxTpwVZ8RpcUqcFCfEcXFMHBVHxGGxIfqE1xr3jFbMN5rByj6xK3bEttgSD8Qj8Ug8FPfFptgU98SGuCfWxF2xLu6I2+KmuCGui2viqrgizolz4qw4I06LU+KkOCGOi2PiqDgiDosN0Se81rhnxGa+EQxW9oktsSUeiPvioXgg7otNcU/cFTfFDXFdXBNXxRVxWVwSF8V5cU6cFWfEaXFKnBQnxPF/4G+oVatWrVq1+qfq9H4D6IXXz+BHxmYAAAAASUVORK5CYII=">
     <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
     <style>
         :root {
@@ -278,7 +279,7 @@
                     </button>
                     <button 
                         @click="pauseAudio" 
-                        :disabled="!isPlaying"
+                        :disabled="!isPlaying && !isPaused"
                         class="control-btn"
                     >
                         <i class="mdi" :class="isPaused ? 'mdi-play' : 'mdi-pause'"></i>
@@ -527,22 +528,33 @@
 
                 const testAudioDevice = async () => {
                     try {
-                        // 创建测试音频
-                        const testAudio = new Audio();
-                        testAudio.src = 'data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==';
-                        testAudio.volume = 0.1;
-                        
-                        await testAudio.play();
+                        // 创建音频上下文
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+
+                        // 配置音频参数
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // 440Hz 是标准 A 音
+                        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // 设置音量为 0.1
+
+                        // 连接节点
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+
+                        // 播放测试音
+                        oscillator.start();
                         audioStatus.value = {
                             text: '音频设备正常，可以开始使用',
                             className: 'status-ok'
                         };
-                        // 播放完立即停止
+
+                        // 200ms 后停止
                         setTimeout(() => {
-                            testAudio.pause();
-                            testAudio.currentTime = 0;
-                        }, 100);
-                        
+                            oscillator.stop();
+                            audioContext.close();
+                        }, 200);
+
                         return true;
                     } catch (error) {
                         console.error('音频设备测试失败:', error);
@@ -565,7 +577,15 @@
                 };
 
                 const pauseAudio = () => {
-                    if (currentAudio && isPlaying.value) {
+                    if (!currentAudio) return;
+                    
+                    if (isPaused.value) {
+                        // 如果当前是暂停状态，则继续播放
+                        currentAudio.play();
+                        isPaused.value = false;
+                        isPlaying.value = true;
+                    } else {
+                        // 如果当前是播放状态，则暂停
                         currentAudio.pause();
                         isPaused.value = true;
                         isPlaying.value = false;
